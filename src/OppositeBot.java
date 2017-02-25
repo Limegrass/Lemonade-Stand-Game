@@ -15,8 +15,12 @@ public class OppositeBot implements Bot
 	ArrayList<Integer> myMoves;
 	public int getNextMove(int player1LastMove, int player2LastMove) 
 	{
-		if(player1Moves.isEmpty())
+		if(player1Moves==null)
 		{
+			player1Moves = new ArrayList<Integer>();
+			player2Moves = new ArrayList<Integer>();	
+			myMoves = new ArrayList<Integer>();
+			myMoves.add(13);
 			player1Moves.add(13);
 			player2Moves.add(13);
 		}
@@ -25,14 +29,14 @@ public class OppositeBot implements Bot
 		
 		odd = !odd;
 		int move;
-		if(odd)
-		{
-			move = (player1LastMove+6)%12 + 1;
-		}
-		else
-		{
+//		if(odd)
+//		{
+//			move = (player1LastMove+6)%12 + 1;
+//		}
+//		else
+//		{
 			move = (player2LastMove+6)%12 + 1;
-		}
+//		}
 		myMoves.add(move);
 		return move;
 	}
