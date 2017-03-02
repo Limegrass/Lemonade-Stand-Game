@@ -162,7 +162,7 @@ public class EASquaredJNAH implements Bot
 		lastMove = move;
 		if(myMoves.size()==10)
 			System.out.println(myMoves.size() + " " + player1Moves.size() + " " + player2Moves.size());
-
+		
 		return move;
 	}
 
@@ -299,16 +299,6 @@ public class EASquaredJNAH implements Bot
 		}
 		followIndex = - followIndex;
 		return followIndex;
-	}
-
-	private int carrotStick(double p1Stick, double p2Stick)
-	{
-		int carrot = -1;
-		boolean p1Follows = true;
-		if(p1Sticks > p2Stick)
-		{
-			p1Follows = false;
-		}
 	}
 
 }
