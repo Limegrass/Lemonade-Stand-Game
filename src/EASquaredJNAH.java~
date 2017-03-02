@@ -4,10 +4,11 @@ import java.util.LinkedList;
 public class EASquaredJNAH implements Bot
 {
 	private final int CAPACITY = 20;
-	private final double RHO = .5;
-	private final double GAMMA = .75;
-	private final double TOL = .1;
-	private final int INITIAL_STICK_COUNT = 5;
+	private double RHO = .5;
+	private double GAMMA = .75;
+	private double TOL = .1;
+	private int INITIAL_STICK_COUNT = 5;
+	private int GOOD_POSITION_STICK_COUNT = 1;
 
 	private int lastMove = 5;
 	private int stickCount = INITIAL_STICK_COUNT;
@@ -22,6 +23,15 @@ public class EASquaredJNAH implements Bot
 	 * 
 	 * @return the next action to play.
 	 */
+	EASquaredJNAH(double rho, double gamma, double tol, double initStick, double goodStick)
+	{
+		this.RHO = rho;
+		this.GAMMA = gamma;
+		this.TOL = tol;
+		this.INITIAL_STICK_COUNT = initStick;
+		this.GOOD_POSITION_STICK_COUNT = goodStick;
+	}
+
 	public int getNextMove(int player1LastMove, int player2LastMove) 
 	{
 		int move = lastMove;
@@ -62,10 +72,10 @@ public class EASquaredJNAH implements Bot
 
 
 		// If stickCounter is set to less than -1, this is the signal to employ stick and carrot strategy
-		//		  else if (stickCount<= -1)
-		//		  {
-		//			  move = carrotAndStick();
-		//		  }
+		else if (stickCount<= -1)
+		{
+			move = carrotStick();
+		}
 
 		//If another player is sticking
 		else if((p1Stick >= p1Follow+TOL) && (p1Stick>=p2Follow+TOL) && (p1Stick>=p2Stick+TOL))
@@ -91,7 +101,7 @@ public class EASquaredJNAH implements Bot
 				else
 				{
 					move = opposite(player2LastMove);
-					stickCount = 1;
+					stickCount = GOOD_POSITION_STICK_COUNT;
 				}
 			}
 		}
@@ -148,12 +158,14 @@ public class EASquaredJNAH implements Bot
 			}
 
 		}
+		//If they are playing opposites and I'm losing out
 		else if( (player1LastMove%6==player2LastMove%6) && (player1LastMove!=player2LastMove) )
 		{
 
-
+			stickCount = -5;
+			move = carrotStick(p1Stick, p2Stick);
 		}
-
+		//If no conditions are met, we are sticking to the previous choice.
 		myMoves.add(move);
 		if(myMoves.size()>CAPACITY){
 			myMoves.poll();
@@ -162,7 +174,7 @@ public class EASquaredJNAH implements Bot
 		lastMove = move;
 		if(myMoves.size()==10)
 			System.out.println(myMoves.size() + " " + player1Moves.size() + " " + player2Moves.size());
-		
+
 		return move;
 	}
 
@@ -301,6 +313,104 @@ public class EASquaredJNAH implements Bot
 		return followIndex;
 	}
 
+	private int carrotStick(double p1Stick, double p2Stick)
+	{
+		int carrot = -1;
+		boolean p1Follows = true;
+		if(p1Stick > p2Stick)
+		{
+			p1Follows = false;
+		}
+		LinkedList<Integer> follower, sticker;
+		if(p1Follows)
+		{
+			follower = player1Moves;
+			sticker = player2Moves;
+		}
+		else
+		{
+			follower = player2Moves;
+			sticker = player1Moves;
+		}
+		
+		int bestSide = showingBias(p1Follows);
+		if (stickCount < -4){
+			// condition the best response to play on bestSide
+			stickCount++;
+			carrot =  (opposite(sticker) + bestSide) % 12;
+			if (carrot == 12){
+				carrot = 0;
+			}
+		}
+		else if (stickCount == -4){
+			// condition the best response to exclude playing opposite sticker
+			stickCount++;
+			carrot =  opposite(sticker);
+		}
+		else if (stickCount == -3){
+			// exploit best response
+			stickCount++;
+			carrot = (opposite(sticker) + 2*bestSide)% 12;
+			if (carrot == 12){
+				carrot = 0;
+			}
+		}
+		else if (stickCount == -2){
+			// exploit best response  
+			stickCount++;
+			carrot = opposite(sticker);
+			if (carrot == 12){
+				carrot = 0;
+			}
+		}
+		else if (stickCount == -1){
+			// exploit best response  
+			stickCount = 2;
+			carrot = (opposite(sticker) + 4*bestSide)% 12;
+			if (carrot == 12){
+				carrot = 0;
+			}
+		}
+		assert(carrot != -1);
+		return carrot;
+	}
+
+	private int showingBias(boolean p1Follower)
+	{
+		int lookBack = 10;
+		int side = 1;
+		LinkedList<Integer> follower, sticker;
+		if(p1Follower)
+		{
+			follower = player1Moves;
+			sticker = player2Moves;
+		}
+		else
+		{
+			follower = player2Moves;
+			sticker = player1Moves;
+		}
+		int stickerLastMove = sticker.getLast();
+		int upSide = 0;
+		int downSide = 0;
+		for(int a = lookBack + 5; a == 5; a--)
+		{
+			if( (follower.get(follower.size()-1-a) - stickerLastMove)%12 > 6)
+			{
+				upSide++;
+			}
+			else if( (follower.get(follower.size()-1-a) - stickerLastMove)%12 < 6 ) 
+			{
+				downSide++;
+			}
+		}
+		if(upSide<downSide){
+			side = 0;
+		}
+		return side;
+
+	}
+	
 }
 
 
