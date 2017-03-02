@@ -170,7 +170,6 @@ public class EASquaredJNAH implements Bot
 		//If they are playing opposites and I'm losing out
 		else if( (player1LastMove%6==player2LastMove%6) && (player1LastMove!=player2LastMove) )
 		{
-
 			stickCount = -5;
 			move = carrotStick(p1Follow, p2Follow);
 		}
@@ -340,10 +339,9 @@ public class EASquaredJNAH implements Bot
 		if (stickCount < -4){
 			// condition the best response to play on bestSide
 			stickCount++;
-			carrot =  (opposite(sticker.get(sticker.size()-1)) + bestSide) % 12;
-			if (carrot == 12){
-				carrot = 0;
-			}
+			carrot =  ((opposite(sticker.get(sticker.size()-1)) + bestSide) % 12);
+			carrot = Math.abs(carrot)+1;
+		
 		}
 		else if (stickCount == -4){
 			// condition the best response to exclude playing opposite sticker
@@ -353,39 +351,33 @@ public class EASquaredJNAH implements Bot
 		else if (stickCount == -3){
 			// exploit best response
 			stickCount++;
-			carrot = (opposite(sticker.get(sticker.size()-1)) + 2*bestSide)% 12;
-			if (carrot == 12){
-				carrot = 0;
-			}
+			carrot = ((opposite(sticker.get(sticker.size()-1)) + 2*bestSide)% 12);
+			carrot = Math.abs(carrot)+1;
 		}
 		else if (stickCount == -2){
 			// exploit best response  
 			stickCount++;
 			carrot = opposite(sticker.get(sticker.size()-1));
-			if (carrot == 12){
-				carrot = 0;
-			}
 		}
 		else if (stickCount == -1){
 			// exploit best response  
 			stickCount = 2;
-			carrot = (opposite(sticker.get(sticker.size()-1)) + 4*bestSide)% 12;
-			if (carrot == 12){
-				carrot = 0;
-			}
+			carrot = ((opposite(sticker.get(sticker.size()-1)) + 4*bestSide)% 12);
+			carrot = Math.abs(carrot)+1;
 		}
 		assert(carrot != -1);
 		return carrot;
 	}
 
 	/**
-	 * I have no idea what the fuck this is suppose to do.
+	 * Attempt to figure out which direction the follower has a tendency towards
+	 * To force a bias
 	 * @param p1Follower whether p1 has greater tendency to follow than p2
-	 * @return who knows it looks like it should always be 1
+	 * @return A direction either clockwise or counter-clockwise to figure out which side has a bias
 	 */
 	private int showingBias(boolean p1Follower)
 	{
-		int lookBack = 10;
+		int lookBack = CAPACITY/2;
 		int side = 1;
 		LinkedList<Integer> follower, sticker;
 		if(p1Follower)
@@ -401,20 +393,20 @@ public class EASquaredJNAH implements Bot
 		int stickerLastMove = sticker.getLast();
 		int upSide = 0;
 		int downSide = 0;
-		for(int a = lookBack + 5; a == 5; a--)
+		for(int a = lookBack + lookBack/2; a >=0 ; a--)
 		{
-			System.out.println("Wtf");
-			if( (follower.get(follower.size()-1-a) - stickerLastMove)%12 > 6)
+			int siding = Math.abs(follower.get(follower.size()-1-a) - stickerLastMove)%12;
+			if( siding > 6)
 			{
 				upSide++;
 			}
-			else if( (follower.get(follower.size()-1-a) - stickerLastMove)%12 < 6 ) 
+			else if( siding < 6 ) 
 			{
 				downSide++;
 			}
 		}
-		if(upSide<downSide){
-			side = 0;
+		if(!(upSide<downSide)){
+			side = -1;
 		}
 		return side;
 
