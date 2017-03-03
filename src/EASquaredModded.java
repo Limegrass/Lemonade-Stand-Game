@@ -446,7 +446,7 @@ public class EASquaredModded implements Bot
 	 */
 	private int showingBias(boolean p1Follower)
 	{
-		int lookBack = CAPACITY/2;
+		int lookBack = myMoves.size()/2;
 		int side = 1;
 		LinkedList<Integer> follower, sticker;
 		if(p1Follower)
