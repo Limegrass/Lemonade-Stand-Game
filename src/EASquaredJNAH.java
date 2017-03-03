@@ -34,7 +34,7 @@ public class EASquaredJNAH implements Bot
 	private int GOOD_POSITION_STICK_COUNT = 1;
 
 	//Variables that change as the game progresses
-	private int lastMove = 5;
+	private int lastMove = 8;
 	private int stickCount = INITIAL_STICK_COUNT; //Initial strategy of sticking to 5
 	//Store the past moves of the players to decide on a next move
 	private LinkedList<Integer> player1Moves;
@@ -211,7 +211,12 @@ public class EASquaredJNAH implements Bot
 	 */
 	private int opposite(int position)
 	{
-		return ((position+6)%12) + 1;
+		int move = (position+6)%12;
+		if(move==0)
+		{
+			return 12;
+		}
+		return move;
 	}
 
 	/**
@@ -263,10 +268,10 @@ public class EASquaredJNAH implements Bot
 		double distance;
 		double gammaRatio;
 		int t = 0;
-		for (int i = 0; i < otherPlayer.size(); i++) 
+		for (int i = 0; i < player.size(); i++) 
 			sumGamma += Math.pow(GAMMA, i);
 
-		for(int i = otherPlayer.size()-1; i>0 ; i--) {
+		for(int i = player.size()-1; i>0 ; i--) {
 			distance = Math.abs((myMoves.get(i) - player.get(i-1)+6)%12); 
 			if(distance > 6)
 			{
@@ -409,7 +414,7 @@ public class EASquaredJNAH implements Bot
 	 */
 	private int showingBias(boolean p1Follower)
 	{
-		int lookBack = CAPACITY/2;
+		int lookBack = myMoves.size()/2;
 		int side = 1;
 		LinkedList<Integer> follower, sticker;
 		if(p1Follower)

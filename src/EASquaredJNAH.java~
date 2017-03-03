@@ -10,25 +10,46 @@ import java.util.LinkedList;
  * @author enrique
  * @author Alex Herron
  */
-public class EASquaredJNAH implements Bot
+public class EASquaredModded implements Bot
 {
 	//The maximum size of history to save
 	//The runtime slows down if we let the size of the history be unrestricted
 	private final int CAPACITY = 20;
 	//These were all final variables but not variable anymore for testing
 	//with constructor 
-	private double RHO = .5;
-	private double GAMMA = .75;
+
+	//RHO < 1 treats behaviors less like ideal types more equally
+	//RHO > 1 values ideal types more greatly
+	private double RHO = .5; //Scales the measure of distance between locations 
+
+	//Larger gamma uses more history
+	private double GAMMA = .75; //Response rate or discount factor
+
+	//Tolerance of differences for specifying into a condition
 	private double TOL = .1;
+
+	//Initial strategy 
 	private int INITIAL_STICK_COUNT = 5;
+	//Number of times to stick when you find a good position
 	private int GOOD_POSITION_STICK_COUNT = 1;
 
 	//Variables that change as the game progresses
 	private int lastMove = 5;
-	private int stickCount = INITIAL_STICK_COUNT;
+	private int stickCount = INITIAL_STICK_COUNT; //Initial strategy of sticking to 5
+	//Store the past moves of the players to decide on a next move
 	private LinkedList<Integer> player1Moves;
 	private LinkedList<Integer> player2Moves;
 	private LinkedList<Integer> myMoves;
+
+//	public EASquaredModded(double rho, double gamma, double tol, int initStick, int goodStick)
+//	{
+//		this.RHO = rho;
+//		this.GAMMA = gamma;
+//		this.TOL = tol;
+//		this.INITIAL_STICK_COUNT = initStick;
+//		this.GOOD_POSITION_STICK_COUNT = goodStick;
+//	}
+	
 	/** 
 	 * @param player1LastMove the action that was selected by Player 1 on the
 	 *                        last round.
@@ -37,18 +58,10 @@ public class EASquaredJNAH implements Bot
 	 * 
 	 * @return the next action to play.
 	 */
-	//	EASquaredJNAH(double rho, double gamma, double tol, int initStick, int goodStick)
-	//	{
-	//		this.RHO = rho;
-	//		this.GAMMA = gamma;
-	//		this.TOL = tol;
-	//		this.INITIAL_STICK_COUNT = initStick;
-	//		this.GOOD_POSITION_STICK_COUNT = goodStick;
-	//	}
-
 	public int getNextMove(int player1LastMove, int player2LastMove) 
 	{
 		int move = lastMove;
+		//Initialize move history
 		if(player1Moves == null)
 		{
 			player1Moves = new LinkedList<Integer>();
@@ -56,12 +69,18 @@ public class EASquaredJNAH implements Bot
 			myMoves = new LinkedList<Integer>();
 			myMoves.add(12); //Seems the tournament gives each other bot an inital value of 12 for the first move.
 		}
+		
+		//Add new moves to the back
 		player1Moves.add(player1LastMove);
 		player2Moves.add(player2LastMove);
+		
+		//Manage size of taking out an element from the front
 		if(player1Moves.size()>CAPACITY){
 			player1Moves.poll();
 			player2Moves.poll();
 		}
+		
+		//Calculates the players tendency to stick and follow
 		double p1Stick = stickIndex(player1Moves);
 		double p1Follow = followIndex(true);
 		double p1FollowP2 = followIndex(player2Moves);
@@ -75,33 +94,29 @@ public class EASquaredJNAH implements Bot
 		//Stick and signal to other players to follow to begin with
 		if(stickCount>0)
 		{
-			move = stickLast();
+			stickCount--;
 		}
-
-
-
 		// If stickCounter is set to less than -1, this is the signal to employ stick and carrot strategy
 		else if (stickCount<= -1)
 		{
-			move = carrotStick(p1Follow, p2Follow);
+			move = carrotStick(p1Follow, p2Follow); //Try to force people off of being rude to me
 		}
 
 		//If another player is sticking
 		else if((p1Stick >= p1Follow+TOL) && (p1Stick>=p2Follow+TOL) && (p1Stick>=p2Stick+TOL))
 		{
-			move = opposite(player1LastMove);
+			move = opposite(player1LastMove); //Play opposite of a sticker
 		}
 		else if((p2Stick >= p2Follow+TOL) && (p2Stick>=p1Follow+TOL) && (p2Stick>=p1Stick+TOL))
 		{
-			move = opposite(player2LastMove);
+			move = opposite(player2LastMove); //Play opposite of a sticker
 		}
 		else if((p1Stick > p1Follow+TOL) && (p2Stick > p2Follow+TOL))
 		{
-			if(lastGain()>7)
+			//If the previous gain was good, do nothing and stick
+			//If it was bad, follow the stickier player
+			if(lastGain()<8)
 			{
-				//	move=lastMove;
-			}
-			else{
 				//Follow stickier
 				if(p1Stick>p2Stick)
 				{
@@ -114,15 +129,13 @@ public class EASquaredJNAH implements Bot
 				}
 			}
 		}
+		//If Player 1 tends to follow and it tends to follow harder than player 2 tends to stick
 		else if( (p1Follow >= p1Stick + TOL) && (p1Follow >= p2Stick + TOL) && (p1Follow >= p2Follow + TOL))
 		{
-
-			//If it is already following me, stick
-			if(p1FollowMe >= p1FollowP2)
-			{
-				//	move = lastMove;
-			}
-			else
+			//Stick onto the other player to force a move
+			//If it is not following me
+			//If it is, do nothing
+			if(p1FollowMe < p1FollowP2)
 			{
 				//It's following the other player, so stick on the other player
 				//to force a move
@@ -130,15 +143,13 @@ public class EASquaredJNAH implements Bot
 			}
 
 		}
+		//If player 2 tends to follow and it tends to follow more than player 1 tends to stick
 		else if( (p2Follow >= p2Stick + TOL) && (p2Follow >= p1Stick + TOL) && (p2Follow >= p1Follow + TOL))
 		{
-
-			//If it is already following me, stick
-			if(p2FollowMe >= p2FollowP1)
-			{
-				//	move = lastMove;
-			}
-			else
+			//Stick onto the other player to force a move
+			//If it is not following me
+			//If it is, do nothing
+			if(p2FollowMe < p2FollowP1)
 			{
 				//It's following the other player, so stick on the other player
 				//to force a move
@@ -149,7 +160,6 @@ public class EASquaredJNAH implements Bot
 		{
 			if( (p1FollowP2 > p1FollowMe + TOL) && (p2FollowP1 > p2FollowMe+ TOL) )
 			{
-
 				boolean p1FollowsHarder = true;
 				if(p2Follow>p1Follow)
 				{
@@ -182,27 +192,34 @@ public class EASquaredJNAH implements Bot
 		return move;
 	}
 
+	/**
+	 * Calculate the points gained last round
+	 * @return the number of points gained last round
+	 */
 	private int lastGain()
 	{
 		int gain = 0;
 		int lastIndex = myMoves.size() - 1;
 		gain += Math.abs(myMoves.get(lastIndex) - player1Moves.get(lastIndex));
 		gain += Math.abs(myMoves.get(lastIndex) - player2Moves.get(lastIndex));
-
-
 		return gain;
 	}
-	private int stickLast()
-	{
-		stickCount--;
-		return lastMove;
-	}
 
+	/**
+	 * Finds the position opposite of another position
+	 * @return the position opposite of another position
+	 */
 	private int opposite(int position)
 	{
 		return ((position+6)%12) + 1;
 	}
 
+	/**
+	 * Calculates the tendency of a player to stick to his position.
+	 * A value of 0 corresponds to always sticking.
+	 * @param the player to calculate the sticking tendency for
+	 * @return a value of how often the player sticks to his position
+	 */
 	private double stickIndex(List<Integer> player)
 	{
 		double stickIndex = 0;
@@ -233,7 +250,12 @@ public class EASquaredJNAH implements Bot
 		return stickIndex;
 	}
 
-	private double followIndex(List<Integer> otherPlayer)
+	/** 
+	 * Calculates the tendency of a player to follow myself 
+	 * @param otherPlayer the other player not being calculated
+	 * @return a calculated general follow index
+	 */
+	private double followIndex(List<Integer> player)
 	{
 
 		double followIndex = 0;
@@ -245,7 +267,7 @@ public class EASquaredJNAH implements Bot
 			sumGamma += Math.pow(GAMMA, i);
 
 		for(int i = otherPlayer.size()-1; i>0 ; i--) {
-			distance = Math.abs((myMoves.get(i) - otherPlayer.get(i-1)+6)%12); 
+			distance = Math.abs((myMoves.get(i) - player.get(i-1)+6)%12); 
 			if(distance > 6)
 			{
 				distance = 12 - distance;
@@ -261,7 +283,11 @@ public class EASquaredJNAH implements Bot
 		followIndex = - followIndex;
 		return followIndex;
 	}
-
+	/**
+	 * Calculate the general tendency of a player to follow another play
+	 * @param player1 whether we are calculating the value for player 1 or 2
+	 * @return the tendency of a player to follow another player
+	 */
 	private double followIndex(boolean player1)
 	{
 
@@ -317,6 +343,13 @@ public class EASquaredJNAH implements Bot
 		return followIndex;
 	}
 
+	/**
+	 * Strategy for when we are in the losing position of a collaboration
+	 * Attempts to force another player away from sticking to their position.
+	 * @param p1Follow player 1's follow index
+	 * @param p2Follow player 2's follow index
+	 * @return the position to play next to force a movement
+	 */
 	private int carrotStick(double p1Follow, double p2Follow)
 	{
 		int carrot = -1;
@@ -365,7 +398,6 @@ public class EASquaredJNAH implements Bot
 			carrot = ((opposite(sticker.get(sticker.size()-1)) + 4*bestSide)% 12);
 			carrot = Math.abs(carrot)+1;
 		}
-		assert(carrot != -1);
 		return carrot;
 	}
 
@@ -413,6 +445,7 @@ public class EASquaredJNAH implements Bot
 	}
 
 }
+
 
 
 
