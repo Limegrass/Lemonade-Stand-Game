@@ -120,7 +120,7 @@ public class EASquaredModded implements Bot
 			
 			move = opposite(player1LastMove); //Play opposite of a sticker
 			//If they're approximately both sticky and one has more total points than the other
-			//
+			//Move to sticking with the other. Try to edge out the two other bots
 //			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player1LastMove==lastMove && r.nextDouble()<SWITCH_RATIO)
 			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player1LastMove==lastMove)
 
@@ -131,6 +131,8 @@ public class EASquaredModded implements Bot
 		else if((p2Stick >= p2Follow+TOL) && (p2Stick>=p1Follow+TOL) && (p2Stick>=p1Stick+TOL))
 		{
 			move = opposite(player2LastMove); //Play opposite of a sticker
+			//If they're approximately both sticky and one has more total points than the other
+			//Move to sticking with the other. Try to edge out the two other bots
 			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player2LastMove==lastMove)
 			{
 				move = opposite(player1LastMove);
