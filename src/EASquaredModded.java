@@ -1,6 +1,6 @@
 import java.util.List;
 import java.util.LinkedList;
-//import java.util.Random;
+import java.util.Random;
 
 /**
  * An adapted implementation of the EA^2 algorithm lemonade stand 
@@ -13,51 +13,52 @@ import java.util.LinkedList;
  */
 public class EASquaredModded implements Bot
 {
+	private Random r = new Random();
+
 	//The maximum size of history to save
 	//The runtime slows down if we let the size of the history be unrestricted
-	private final int CAPACITY = 20;
+	private final int CAPACITY = 200;
 	//These were all final variables but not variable anymore for testing
 	//with constructor 
 
 	//RHO < 1 treats behaviors less like ideal types more equally
 	//RHO > 1 values ideal types more greatly
-	private double RHO = .5; //Scales the measure of distance between locations 
+
+	private final double RHO = .5; //Scales the measure of distance between locations 
 
 	//Larger gamma uses more history
-	private double GAMMA = .75; //Response rate or discount factor
+	private final double GAMMA = .75; //Response rate or discount factor
 
 	//Tolerance of differences for specifying into a condition
-	private double TOL = .1;
+	private final double TOL = .1;
 
 	//Initial strategy 
-	private int INITIAL_STICK_COUNT = 5;
+	private final int INITIAL_STICK_COUNT = 5;
 	//Number of times to stick when you find a good position
-	private int GOOD_POSITION_STICK_COUNT = 1;
-	//Chance to switch partners 
-//	private double SWITCH_RATIO = .05;
+	private final int GOOD_POSITION_STICK_COUNT = 1;
 
 	//Variables that change as the game progresses
-	private int lastMove = 7;
+	private int lastMove = r.nextInt(12)+1; 
+	//mSo maybe I can slightly edge out a little bit more there by picking opposite of 7
 	private int stickCount = INITIAL_STICK_COUNT; //Initial strategy of sticking to 5
 
-//	private Random r = new Random();
 	//Store the past moves of the players to decide on a next move
 	private LinkedList<Integer> player1Moves;
 	private LinkedList<Integer> player2Moves;
 	private LinkedList<Integer> myMoves;
-//	private Random r = new Random();
+	//	private Random r = new Random();
 	private int p1Total = 0;
 	private int p2Total = 0;
 
-//	public EASquaredModded(double rho, double gamma, double tol, int initStick, int goodStick)
-//	{
-//		this.RHO = rho;
-//		this.GAMMA = gamma;
-//		this.TOL = tol;
-//		this.INITIAL_STICK_COUNT = initStick;
-//		this.GOOD_POSITION_STICK_COUNT = goodStick;
-//	}
-	
+	//	public EASquaredModded(double rho, double gamma, double tol, int initStick, int goodStick)
+	//	{
+	//		this.RHO = rho;
+	//		this.GAMMA = gamma;
+	//		this.TOL = tol;
+	//		this.INITIAL_STICK_COUNT = initStick;
+	//		this.GOOD_POSITION_STICK_COUNT = goodStick;
+	//	}
+
 	/** 
 	 * @param player1LastMove the action that was selected by Player 1 on the
 	 *                        last round.
@@ -86,13 +87,13 @@ public class EASquaredModded implements Bot
 		//Add new moves to the back
 		player1Moves.add(player1LastMove);
 		player2Moves.add(player2LastMove);
-		
+
 		//Manage size of taking out an element from the front
 		if(player1Moves.size()>CAPACITY){
 			player1Moves.poll();
 			player2Moves.poll();
 		}
-		
+
 		//Calculates the players tendency to stick and follow
 		double p1Stick = stickIndex(player1Moves);
 		double p1Follow = followIndex(true);
@@ -117,13 +118,12 @@ public class EASquaredModded implements Bot
 		//If another player is sticking
 		else if((p1Stick >= p1Follow+TOL) && (p1Stick>=p2Follow+TOL) && (p1Stick>=p2Stick+TOL))
 		{
-			
+
 			move = opposite(player1LastMove); //Play opposite of a sticker
 			//If they're approximately both sticky and one has more total points than the other
 			//Move to sticking with the other. Try to edge out the two other bots
-//			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player1LastMove==lastMove && r.nextDouble()<SWITCH_RATIO)
+			//			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player1LastMove==lastMove && r.nextDouble()<SWITCH_RATIO)
 			if(Math.abs(p1Stick-p2Stick) < TOL && p1Total<p2Total && player1LastMove==lastMove)
-
 			{
 				move = opposite(player2LastMove);
 			}
@@ -219,7 +219,7 @@ public class EASquaredModded implements Bot
 		{
 			myMoves.poll();
 		}
-//		System.out.println(player1LastMove + " " + move + " "  + player2LastMove);
+		//		System.out.println(player1LastMove + " " + move + " "  + player2LastMove);
 		lastMove = move;
 
 		return move;
@@ -405,13 +405,14 @@ public class EASquaredModded implements Bot
 			sticker = player1Moves;
 		}
 
-		int bestSide = showingBias(p1Follows);
-		if (stickCount < -4){
+		int bestSide = showingBias(p1Follows);if (stickCount < -4){
 			// condition the best response to play on bestSide
 			stickCount++;
 			carrot =  ((opposite(sticker.get(sticker.size()-1)) + bestSide) % 12);
-			carrot = Math.abs(carrot)+1;
-		
+			if(carrot == 0)
+				return 12;
+			carrot = Math.abs(carrot);
+
 		}
 		else if (stickCount == -4){
 			// condition the best response to exclude playing opposite sticker
@@ -422,7 +423,9 @@ public class EASquaredModded implements Bot
 			// exploit best response
 			stickCount++;
 			carrot = ((opposite(sticker.get(sticker.size()-1)) + 2*bestSide)% 12);
-			carrot = Math.abs(carrot)+1;
+			if(carrot == 0)
+				return 12;
+			carrot = Math.abs(carrot);
 		}
 		else if (stickCount == -2){
 			// exploit best response  
@@ -433,7 +436,9 @@ public class EASquaredModded implements Bot
 			// exploit best response  
 			stickCount = 2;
 			carrot = ((opposite(sticker.get(sticker.size()-1)) + 4*bestSide)% 12);
-			carrot = Math.abs(carrot)+1;
+			if(carrot == 0)
+				return 12;
+			carrot = Math.abs(carrot);
 		}
 		return carrot;
 	}
